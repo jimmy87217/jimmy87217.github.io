@@ -114,9 +114,10 @@ d3.csv("MLBstats.csv").then(data => {
         .attr("x2", xScale(2015))
         .attr("y1", 0)
         .attr("y2", height)
-        .attr("stroke", "Yellow")
+        .attr("stroke", "black")
         .attr("stroke-width", 2)
-        .attr("opacity", 0.5);
+        .attr("fill", "none")
+        .attr("stroke-dasharray", "5,5");  // 设置虚线样式
 
     // Brush 設定
     const brush = d3.brushX()
@@ -343,44 +344,73 @@ function drawPie(containerId, leagueData, year) {
 
     // 累加所有相關比例數據
     const pieData = filteredData.reduce((acc, d) => {
-        acc.fly_ball += d.fly_ball_pct || 0; // 確保數據存在
+        acc.fly_ball += d.fly_ball_pct || 0;
         acc.ground_ball += d.ground_ball_pct || 0;
         acc.line_drive += d.line_drive_pct || 0;
         acc.popup += d.popup_pct || 0;
         return acc;
     }, { fly_ball: 0, ground_ball: 0, line_drive: 0, popup: 0 });
 
-    // 將累計數據轉換為比例
+    // 正規化數據
     const total = Object.values(pieData).reduce((sum, val) => sum + val, 0);
-    const normalizedPieData = Object.entries(pieData).map(([key, value]) => [key, (value / total) * 100]);
+    const normalizedPieData = Object.entries(pieData).map(([key, value]) => ({
+        key, value: (value / total) * 100
+    }));
 
-    const pie = d3.pie().value(d => d[1])(normalizedPieData);
-    const arc = d3.arc().innerRadius(0).outerRadius(100);
+    // 圓餅圖設定
+    const pie = d3.pie().value(d => d.value);
+    const arc = d3.arc().innerRadius(0).outerRadius(120);
 
     const color = d3.scaleOrdinal()
         .domain(["fly_ball", "ground_ball", "line_drive", "popup"])
         .range(["#ffcc00", "#66ccff", "#ff6666", "#99cc00"]);
 
-    // 畫餅圖
+    // 繪製圓餅圖
     const g = pieSvg.append("g")
         .attr("transform", "translate(200, 150)");
 
     g.selectAll("path")
-        .data(pie)
+        .data(pie(normalizedPieData))
         .enter()
         .append("path")
         .attr("d", arc)
-        .attr("fill", d => color(d.data[0]));
+        .attr("fill", d => color(d.data.key));
 
-    // 添加文字標籤
+    // 添加百分比標示
     g.selectAll("text")
-        .data(pie)
+        .data(pie(normalizedPieData))
         .enter()
         .append("text")
         .attr("transform", d => `translate(${arc.centroid(d)})`)
-        .text(d => `${d.data[0]}: ${d.data[1].toFixed(1)}%`)
+        .attr("text-anchor", "middle")
         .style("font-size", "14px")
-        .style("text-anchor", "middle");
+        .style("fill", "#000")
+        .text(d => `${d.data.value.toFixed(1)}%`);
+
+    // 添加右下角圖例
+    const legend = pieSvg.append("g")
+        .attr("transform", `translate(320, 250)`); // 調整右下角位置
+
+    const legendItems = normalizedPieData.map(d => d.key);
+
+    legend.selectAll(".legend-item")
+        .data(legendItems)
+        .enter()
+        .append("g")
+        .attr("transform", (d, i) => `translate(0, ${i * 20})`)
+        .each(function(d, i) {
+            d3.select(this).append("rect")
+                .attr("width", 15)
+                .attr("height", 15)
+                .attr("fill", color(d));
+
+            d3.select(this).append("text")
+                .attr("x", 20)
+                .attr("y", 12)
+                .text(d)
+                .style("font-size", "12px")
+                .attr("alignment-baseline", "middle");
+        });
 }
 
 
