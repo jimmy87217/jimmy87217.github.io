@@ -108,7 +108,7 @@ d3.csv("MLBstats.csv").then(data => {
         .style("fill", "red");
 
 
-    // 在 2015 年位置添加垂直線
+    // 在 2015 年位置添加垂直虛線
     svg.append("line")
         .attr("x1", xScale(2015)) 
         .attr("x2", xScale(2015))
@@ -117,7 +117,7 @@ d3.csv("MLBstats.csv").then(data => {
         .attr("stroke", "black")
         .attr("stroke-width", 2)
         .attr("fill", "none")
-        .attr("stroke-dasharray", "5,5");  // 设置虚线样式
+        .attr("stroke-dasharray", "5,5");
 
     // Brush 設定
     const brush = d3.brushX()
