@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MLB Data Visualization</title>
+    <style>
+        body {
+            display: flex;
+            flex-direction: column;
+            align-items: flex-start; /* 讓所有內容靠左 */
+            margin-left: 20px; /* 左邊距離 */
+        }
+
+        #chart-container {
+            display: flex;
+            align-items: flex-start;
+            position: relative;
+        }
+
+        #chart {
+            margin-right: 20px; /* 折線圖和文字之間的間距 */
+        }
+
+        #chart-description {
+            width: 250px;
+            font-size: 14px;
+            line-height: 1.5;
+            color: #333;
+        }
+
+        #charts {
+            width: 100%;
+            display: flex;
+            flex-direction: row;
+            justify-content: flex-start;
+            align-items: flex-start;
+            gap: 0px;
+            margin-top: -20px;
+        }
+
+        .year-chart {
+            display: flex;
+            flex-direction: column;
+            align-items: flex-start;
+            gap: -20px;
+        }
+
+
+        svg {
+            margin: 1px;
+        }
+        
+    </style>
+</head>
+<body>
+    <!-- 包含折線圖與文字的容器 -->
+    <div id="chart-container">
+        <!-- 折線圖 -->
+        <svg id="chart" width="900" height="500"></svg>
+
+        <!-- 說明文字 -->
+        <div id="chart-description">
+            <p>
+                Since Major League Baseball (MLB) implemented the Statcast system in 2015, 
+                more advanced scientific data has been utilized in the league. 
+                The mainstream hitting strategy in MLB has gradually changed, 
+                leading to the current "Fly Ball Revolution."
+            </p>
+        </div>
+    </div>
+
+    <!-- 動態生成的圖表區域 -->
+    <div id="charts"></div>
+
+    <!-- Betts Story 區域 -->
+    <div id="betts-story" style="display: flex; align-items: center;">
+        <!-- 故事說明 -->
+        <div style="width: 200px; margin-right: 20px; font-size: 16px; line-height: 1.5;">
+            <p>
+                From Mookie Betts' launch angle data, we can see that he has continuously adjusted 
+                his batting stance, gradually becoming one of the top players in MLB.
+            </p>
+        </div>
+
+        <!-- Betts 圖表 -->
+        <div id="betts-view" style="width: 400px; height: 400px;"></div>
+    </div>
+
+    <!-- D3.js 和主 JS 文件 -->
+    <script src="https://d3js.org/d3.v7.min.js"></script>
+    <script src="main.js"></script>
+</body>
+</html>
