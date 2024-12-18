@@ -108,7 +108,7 @@ d3.csv("MLBstats.csv").then(data => {
         .style("fill", "red");
 
 
-    // 在 2015 年位置添加垂直虛線
+    // 在 2015 年位置添加垂直線
     svg.append("line")
         .attr("x1", xScale(2015)) 
         .attr("x2", xScale(2015))
@@ -586,6 +586,11 @@ function drawBettsView(containerId, data) {
             bars.attr("opacity", 0.2);
             d3.select(event.currentTarget).attr("opacity", 1).attr("stroke", "black").attr("stroke-width", 1.5);
 
+            // 高亮右側 wRC+ 柱狀圖
+            wrcBars.attr("opacity", 0.2);
+            wrcBars.filter(bar => bar.year === d.year)
+                .attr("opacity", 1).attr("stroke", "black").attr("stroke-width", 1.5);
+
             // 顯示表格並更新數據
             tableContainer.style("display", "block");
             tableContainer.select("#year-val").text(d.year);
@@ -605,4 +610,118 @@ function drawBettsView(containerId, data) {
             bars.attr("opacity", 0.8).attr("stroke", "none");
             tableContainer.style("display", "none"); // 隱藏表格
         });
+
+
+    // wRC+ 柱狀圖設定
+    const barWidth = 15; // 每個柱子的寬度
+    const barPadding = 8; // 柱子間距
+    const wrcChartWidth = data.length * (barWidth + barPadding); // 計算柱狀圖總寬度
+    const wrcChartHeight = 200; // 柱狀圖高度
+
+    // 創建右側的 wRC+ 柱狀圖 SVG 容器
+    const wrcSvg = container.append("svg")
+        .attr("width", wrcChartWidth + 100) // 加額外寬度留給標籤
+        .attr("height", wrcChartHeight + 50)
+        .style("position", "absolute")
+        .style("left", `${width + 20}px`) // 緊鄰左側圖
+        .style("top", "180px");
+
+    // Scales
+    const wrcXScale = d3.scaleBand()
+        .domain(data.map(d => d.year))
+        .range([0, wrcChartWidth])
+        .padding(0.2);
+
+    const wrcYScale = d3.scaleLinear()
+        .domain([0, d3.max(data, d => d.wRC)])
+        .range([wrcChartHeight, 0]);
+
+    // 添加柱狀圖
+    const wrcBars = wrcSvg.selectAll(".wrc-bar")
+        .data(data)
+        .enter()
+        .append("rect")
+        .attr("class", "wrc-bar")
+        .attr("x", d => wrcXScale(d.year))
+        .attr("y", d => wrcYScale(d.wRC))
+        .attr("width", wrcXScale.bandwidth() / 1.5) // 欄位變窄
+        .attr("height", d => wrcChartHeight - wrcYScale(d.wRC))
+        .attr("fill", d => d.year < 2020 ? "red" : "blue") // 根據年份決定顏色
+        .attr("opacity", 0.8)
+        .on("mouseover", (event, d) => {
+            // 高亮當前柱子
+            wrcBars.attr("opacity", 0.2);
+            d3.select(event.currentTarget).attr("opacity", 1).attr("stroke", "black").attr("stroke-width", 1.5);
+
+            // 高亮左側揮棒仰角柱狀圖
+            bars.attr("opacity", 0.2);
+            bars.filter(bar => bar.year === d.year)
+                .attr("opacity", 1).attr("stroke", "black").attr("stroke-width", 1.5);
+
+            // 更新右側表格數據
+            tableContainer.style("display", "block");
+            tableContainer.select("#year-val").text(d.year);
+            tableContainer.select("#angle-val").text(`${d.angle}°`);
+            tableContainer.select("#hardhit-val").text(`${d.hardHit}%`);
+            tableContainer.select("#wrc-val").text(d.wRC);
+
+            // 更換圖片與文字
+            const imageSrc = d.year < 2020 ? "betts_redsox.jpg" : "betts_dodger.jpg";
+            const text = d.year < 2020 ? "2014-2019 in Red Sox" : "2020-2024 in Dodgers";
+            image.attr("src", imageSrc);
+            description.text(text);
+        })
+        .on("mouseout", () => {
+            // 恢復透明度
+            wrcBars.attr("opacity", 0.8).attr("stroke", "none");
+            bars.attr("opacity", 0.8).attr("stroke", "none");
+            tableContainer.style("display", "none");
+        });
+
+    // 添加柱狀圖 X 軸
+    wrcSvg.append("g")
+        .attr("transform", `translate(0, ${wrcChartHeight})`)
+        .call(d3.axisBottom(wrcXScale).tickFormat(d3.format("d")))
+        .selectAll("text")
+        .attr("transform", "rotate(-45)")
+        .attr("text-anchor", "end")
+        .style("font-size", "12px") // 調整文字大小
+        .style("fill", "#555"); // X 軸標籤顏色
+
+    // 添加柱狀圖 Y 軸標籤
+    wrcSvg.append("text")
+        .attr("x", wrcChartWidth / 2)
+        .attr("y", wrcChartHeight + 45)
+        .attr("text-anchor", "middle")
+        .style("font-size", "14px")
+        .text("wRC+ by Year");
+
+    wrcSvg.append("text")
+        .attr("x", -wrcChartHeight / 2)
+        .attr("y", -40)
+        .attr("text-anchor", "middle")
+        .attr("transform", "rotate(-90)")
+        .style("font-size", "14px")
+        .text("wRC+");
+
+    // 添加 League Avg 橫線
+    wrcSvg.append("line")
+        .attr("x1", 0)
+        .attr("x2", wrcChartWidth)
+        .attr("y1", wrcYScale(100)) // 在 Y 軸 100 的位置
+        .attr("y2", wrcYScale(100))
+        .attr("stroke", "gray")
+        .attr("stroke-dasharray", "5,5") // 虛線
+        .attr("stroke-width", 1.5);
+
+    // 添加 League Avg 標籤
+    wrcSvg.append("text")
+        .attr("x", wrcChartWidth + 10) // 緊貼右邊
+        .attr("y", wrcYScale(100)) // 與橫線對齊
+        .attr("text-anchor", "start") // 文字從左側開始
+        .attr("alignment-baseline", "middle")
+        .style("font-size", "12px")
+        .style("fill", "gray")
+        .text("League Avg");
+
 }
